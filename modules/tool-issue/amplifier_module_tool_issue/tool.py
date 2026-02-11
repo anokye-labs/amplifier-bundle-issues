@@ -77,6 +77,24 @@ class IssueTool:
             "required": ["operation"],
         }
 
+    _RESOLVABLE_ID_FIELDS = ("issue_id", "from_id", "to_id")
+
+    def _resolve_param_ids(self, params: dict) -> dict:
+        """Resolve short-form issue IDs in params to full UUIDs.
+
+        Args:
+            params: Tool parameters dict
+
+        Returns:
+            New dict with ID fields resolved to full UUIDs
+        """
+        resolved = dict(params)
+        for field in self._RESOLVABLE_ID_FIELDS:
+            value = resolved.get(field)
+            if value:
+                resolved[field] = self.issue_manager.resolve_issue_id(value)
+        return resolved
+
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """Execute issue operation using embedded manager."""
         operation = input.get("operation")
@@ -84,6 +102,12 @@ class IssueTool:
             return ToolResult(success=False, error={"message": "Operation is required"})
 
         params = input.get("params", {})
+
+        # Resolve short-form issue IDs to full UUIDs before dispatch
+        try:
+            params = self._resolve_param_ids(params)
+        except ValueError as e:
+            return ToolResult(success=False, error={"message": str(e)})
 
         try:
             if operation == "create":

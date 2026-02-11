@@ -206,6 +206,24 @@ class IssueManager:
             index = self._load_fresh()
             return index.get_issue(issue_id)
 
+    def resolve_issue_id(self, issue_id: str) -> str:
+        """Resolve a full or partial issue ID to the full UUID.
+
+        Loads fresh index state and performs prefix matching.
+
+        Args:
+            issue_id: Full UUID or prefix
+
+        Returns:
+            The full issue UUID
+
+        Raises:
+            ValueError: If no issue matches or multiple issues match
+        """
+        with self._acquire_lock():
+            index = self._load_fresh()
+            return index.resolve_issue_id(issue_id)
+
     def update_issue(
         self,
         issue_id: str,
