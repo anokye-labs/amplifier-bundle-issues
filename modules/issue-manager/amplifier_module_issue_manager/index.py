@@ -44,6 +44,36 @@ class IssueIndex:
         """
         return self.issues.get(issue_id)
 
+    def resolve_issue_id(self, partial_id: str) -> str:
+        """Resolve a full or partial issue ID to the full UUID.
+
+        Args:
+            partial_id: Full UUID or prefix (e.g., first 8 characters)
+
+        Returns:
+            The full issue UUID
+
+        Raises:
+            ValueError: If no issue matches or multiple issues match the prefix
+        """
+        # Fast path: exact match (full UUID)
+        if partial_id in self.issues:
+            return partial_id
+
+        # Prefix search
+        matches = [fid for fid in self.issues if fid.startswith(partial_id)]
+
+        if len(matches) == 1:
+            return matches[0]
+        elif len(matches) == 0:
+            raise ValueError(f"No issue found matching '{partial_id}'")
+        else:
+            match_list = ", ".join(sorted(matches)[:5])
+            suffix = f" (showing 5 of {len(matches)})" if len(matches) > 5 else ""
+            raise ValueError(
+                f"Ambiguous issue ID '{partial_id}' matches {len(matches)} issues: {match_list}{suffix}"
+            )
+
     def list_issues(
         self,
         status: str | None = None,
