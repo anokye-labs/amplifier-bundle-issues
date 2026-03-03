@@ -3,16 +3,10 @@ name = "amplifier-module-tool-issue"
 version = "0.1.0"
 description = "Issue management tool module for Amplifier"
 requires-python = ">=3.11"
-dependencies = ["amplifier-core", "amplifier-module-issue-manager"]
-
-[tool.uv.sources.amplifier-core]
-git = "https://github.com/microsoft/amplifier-core"
-branch = "main"
-
-[tool.uv.sources.amplifier-module-issue-manager]
-git = "https://github.com/microsoft/amplifier-bundle-issues"
-subdirectory = "modules/issue-manager"
-branch = "main"
+dependencies = [
+    "amplifier-core",
+    "amplifier-module-issue-manager @ git+https://github.com/microsoft/amplifier-bundle-issues@main#subdirectory=modules/issue-manager",
+]
 
 [project.entry-points."amplifier.modules"]
 tool-issue = "amplifier_module_tool_issue:mount"
