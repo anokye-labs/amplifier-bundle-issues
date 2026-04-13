@@ -47,7 +47,7 @@ jobs:
             ];
 
             if (invalidPatterns.some((pattern) => pattern.test(title))) {
-              core.setFailed('PR title cannot be empty or WIP/draft-style. Update it to a reviewable title.');
+              core.setFailed('PR title cannot be WIP/draft-style. Update it to a reviewable title.');
               return;
             }
 
