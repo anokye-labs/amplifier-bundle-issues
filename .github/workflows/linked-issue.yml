@@ -1,0 +1,46 @@
+name: Linked Issue
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-linked-issue:
+    name: check-linked-issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate linked issue policy
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import sys
+
+          with open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8') as handle:
+              event = json.load(handle)
+
+          pr = event['pull_request']
+          labels = {label['name'] for label in pr.get('labels', [])}
+          if 'no-linked-issue-required' in labels:
+              print('Bypass label present.')
+              sys.exit(0)
+
+          combined = '\n'.join(part for part in [pr.get('title') or '', pr.get('body') or ''] if part)
+          has_issue_number = re.search(r'#\d+\b', combined)
+          has_issue_url = re.search(r'https://github\.com/[^/\s]+/[^/\s]+/issues/\d+\b', combined)
+
+          if has_issue_number or has_issue_url:
+              print('Issue reference found.')
+              sys.exit(0)
+
+          print('PRs must reference an issue in the title or body, or use the no-linked-issue-required label.', file=sys.stderr)
+          sys.exit(1)
+          PY

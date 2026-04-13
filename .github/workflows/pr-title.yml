@@ -1,0 +1,52 @@
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import sys
+
+          with open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8') as handle:
+              event = json.load(handle)
+
+          title = (event['pull_request'].get('title') or '').strip()
+          if not title:
+              print('PR title cannot be empty.', file=sys.stderr)
+              sys.exit(1)
+
+          if re.match(r'^bump\s+.+\s+from\s+.+\s+to\s+.+$', title, re.IGNORECASE) or re.match(r'^(build|chore)(\([^)]*\))?:\s*bump\s+', title, re.IGNORECASE):
+              print('Dependabot-style bump title allowed.')
+              sys.exit(0)
+
+          wip_patterns = [
+              r'^wip\b',
+              r'^\[\s*wip\s*\]',
+              r'^\(\s*wip\s*\)',
+              r'^draft\b',
+              r'^\[\s*draft\s*\]',
+              r'^\(\s*draft\s*\)',
+          ]
+          if any(re.match(pattern, title, re.IGNORECASE) for pattern in wip_patterns):
+              print('PR title cannot be WIP/Draft-style.', file=sys.stderr)
+              sys.exit(1)
+
+          print('PR title accepted.')
+          PY
